@@ -5,8 +5,27 @@ import module2.maintask.GuavaCacheImplementation;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class GuavaCacheImplementationTest {
+    @Test
+    public void cacheEvictionCount(){
+        GuavaCacheImplementation guava = new GuavaCacheImplementation();
+        for (int i=0; i<100_700; i++){
+            guava.addRecord(""+i,""+i);
+        }
+        assertFalse(0== guava.getCacheEvictions());
+    }
+
+    @Test
+    public void averageAddingValues(){
+        GuavaCacheImplementation guava = new GuavaCacheImplementation();
+        for (int i=0; i<100_700; i++){
+            guava.addRecord(""+i,""+i);
+        }
+        assertEquals(0.0d, guava.getAveragePuttingValues(),0.01);
+    }
+
     @Test
     public void valueHasExpired(){
         GuavaCacheImplementation guava = new GuavaCacheImplementation();

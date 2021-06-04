@@ -34,14 +34,14 @@ public class GuavaCacheImplementation {
     }
 
     //max zise=100_000 --
-    //eviction policy
+    //eviction policy --
     //time-based on last access(5 seconds) --
     //removal listener --
-    //just add to log of removed entry
+    //just add to log of removed entry --
     //give statistic to user --
     //average time spent for putting new values into the cache--
     //number of cache evictions --
-    //support concurrency
+    //support concurrency --
     private LoadingCache<String,String> cache = CacheBuilder.newBuilder()
             .maximumSize(100_000)//
             .expireAfterAccess(5, TimeUnit.SECONDS)
