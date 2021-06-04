@@ -33,7 +33,7 @@ public class ManageCache {
                 JavaBaseTask headAux = head;
                 int size = items.size();
                 for (int i=0; i < size; i++) {
-                    if (LocalDateTime.now().isAfter(delAux.getAcceedTime().plusSeconds(10))){
+                    if (LocalDateTime.now().isAfter(delAux.getAcceedTime().plusSeconds(5))){
                         if(delAux.previous == null){
                             items.remove(delAux.getKey());
                             System.out.println("element with key :"+delAux.getKey()+" it's been deleted because expired");
@@ -66,20 +66,8 @@ public class ManageCache {
                 }
                 readWrite.unlock();
             }
-        }, 11,11, TimeUnit.SECONDS);
+        }, 5100,5100, TimeUnit.MILLISECONDS);
     }
-
-        public static void main(String[] args) throws InterruptedException {
-
-            int capacity = 4;
-            ManageCache manageCache = new ManageCache(capacity);
-            for (int i=0; i<capacity; i++){
-                manageCache.put(i, i+"");
-            }
-            Thread.sleep(8000);
-            manageCache.get(1).getValue();
-            System.out.println("value retraved :"+manageCache.get(2).getValue());
-        }
 
     public JavaBaseTask get(int key){
         return chageFrequency(key);
@@ -121,10 +109,16 @@ public class ManageCache {
             // least frequent acceced element which are the ones from the tail of the
             //(double related list)
             removeTailElement();
+            evictions += 1;
             put(key, value);
         }
         writeLock.unlock();
     }
+
+    public int getEvictions() {
+        return evictions;
+    }
+
     private  void addNewValue(Integer key, String value, JavaBaseTask repeated){
         JavaBaseTask baseTask = null;
         if (repeated == null){

@@ -13,7 +13,7 @@ public class ManageCacheTest {
         //agrega los valores pero como agregar los 100_000 valores toma mas de 5 segundos
         //entonces empieza a eliminarlos por el category eviction de que si el valor
         // no es accesado en los ultimos 5 segundos que los elimine
-        for (int i=0; i<106_000; i++){
+        for (int i=0; i<100_500; i++){
             cache.put(i, i+"");
         }
     }
@@ -31,5 +31,15 @@ public class ManageCacheTest {
         TestCase.assertEquals(2,newFreq.getFrequency());
         //was reinserted with the same value
         TestCase.assertEquals("3",newFreq.getValue());
+    }
+
+    @Test
+    public void validateEvictions() {
+        int capacity = 500;
+        ManageCache manageCache = new ManageCache(capacity);
+        for (int i=0; i<capacity+10; i++){
+            manageCache.put(i, i+"");
+        }
+        TestCase.assertEquals(10, manageCache.getEvictions());
     }
 }
