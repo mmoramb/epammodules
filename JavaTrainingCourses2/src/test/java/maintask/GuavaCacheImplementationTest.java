@@ -29,7 +29,6 @@ public class GuavaCacheImplementationTest {
     @Test
     public void valueHasExpired(){
         GuavaCacheImplementation guava = new GuavaCacheImplementation();
-
         try {
             guava.addRecord("2","3");
             String val =    guava.getRecord("2");

@@ -4,46 +4,56 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ManageCache {
-    Map<Integer, JavaBaseTask> items;
-    int capacity;
-    int evictions;
-    JavaBaseTask head;
-    JavaBaseTask tail;
+    private Map<Integer, JavaBaseTask> items;
+    private int capacity;
+    private int evictions;
+    private JavaBaseTask head;
+    private JavaBaseTask tail;
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final Lock readWrite = rwLock.readLock();
+    public final Lock writeLock = rwLock.writeLock();
+
     public ManageCache(int capacity){
         this.capacity = capacity;
         this.items = new ConcurrentHashMap<>();
         removeExpired();
     }
 
-    private synchronized void removeExpired(){
+    private  void removeExpired(){
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
+                readWrite.lock();
                 JavaBaseTask delAux = tail;
                 JavaBaseTask headAux = head;
                 int size = items.size();
                 for (int i=0; i < size; i++) {
-                    if (LocalDateTime.now().isAfter(delAux.getAcceedTime().plusSeconds(5))){
+                    if (LocalDateTime.now().isAfter(delAux.getAcceedTime().plusSeconds(10))){
                         if(delAux.previous == null){
                             items.remove(delAux.getKey());
                             System.out.println("element with key :"+delAux.getKey()+" it's been deleted because expired");
                             delAux=null;
                             headAux=null;
+                            tail = delAux;
+                            head = headAux;
                         }else if(delAux.previous != null){
                             var auxDel1 = delAux;
                             items.remove(delAux.getKey());
                             System.out.println("element with key :"+delAux.getKey()+" it's been deleted because expired");
                             delAux = delAux.previous;
-                            delAux.next=null;
+                            delAux.next = null;
+                            tail = delAux;
                         }
                     }else {
                         delAux = delAux.previous;
                     }
                 }
-                /*System.out.println("map size"+items.size());
+                System.out.println("map size"+items.size());
                 System.out.println("from tail");
                 while (delAux != null){
                     System.out.println(delAux.getKey());
@@ -53,46 +63,50 @@ public class ManageCache {
                 while (headAux != null){
                     System.out.println(headAux.getKey());
                     headAux = headAux.next;
-                }*/
+                }
+                readWrite.unlock();
             }
-        }, 0,5, TimeUnit.SECONDS);
+        }, 0,10, TimeUnit.SECONDS);
     }
+    /*
+        public static void main(String[] args) throws InterruptedException {
+            int capacity = 4;
+            ManageCache manageCache = new ManageCache(capacity);
+            for (int i=0; i<capacity; i++){
+                manageCache.put(i, i+"");
+            }
+            Thread.sleep(8000);
+            manageCache.get(1).getValue();
+            System.out.println("value retraved :"+manageCache.get(2).getValue());
 
-    public static void main(String[] args) throws InterruptedException {
-        int capacity = 4;
-        ManageCache manageCache = new ManageCache(capacity);
-        for (int i=0; i<capacity; i++){
-            manageCache.put(i, i+"");
+            //System.out.println("after getting");
+            var headAux = manageCache.head;
+            while (headAux != null){
+                System.out.println(headAux.getKey());
+                headAux = headAux.next;
+            }
         }
-        //manageCache.removeExpired();
-        Thread.sleep(3000);
-        System.out.println("value retraved :"+manageCache.get(2).getValue());
-
-        //System.out.println("after getting");
-        /*var headAux = manageCache.head;
-        while (headAux != null){
-            System.out.println(headAux.getKey());
-            headAux = headAux.next;
-        }*/
-    }
-
-    public synchronized JavaBaseTask get(int key){
+    */
+    public JavaBaseTask get(int key){
         return chageFrequency(key);
     }
 
-    private synchronized JavaBaseTask chageFrequency(int key){
+    private JavaBaseTask chageFrequency(int key){
+        writeLock.lock();
         JavaBaseTask item = items.get(key);
         item.setFrequency();
         removeRepetitiveItem(item);
         //removing relations to add it again, should be after removing it from related list
         item.next = null;
         item.previous = null;
-        addNewValue(0,null,item);
         items.remove(key);
+        addNewValue(item.getKey(),null,item);
+        writeLock.unlock();
         return item;
     }
 
-    public synchronized void put(Integer key, String value){
+    public  void put(Integer key, String value){
+        writeLock.lock();
         if (items.size() < this.capacity){
             if (items.containsKey(key)){
                 //the the element, increment it's frequency by 1, remove the element
@@ -115,8 +129,9 @@ public class ManageCache {
             removeTailElement();
             put(key, value);
         }
+        writeLock.unlock();
     }
-    private synchronized void addNewValue(Integer key, String value, JavaBaseTask repeated){
+    private  void addNewValue(Integer key, String value, JavaBaseTask repeated){
         JavaBaseTask baseTask = null;
         if (repeated == null){
             baseTask = new JavaBaseTask(key, value);
@@ -136,7 +151,7 @@ public class ManageCache {
         aux1.previous.next = aux1;
     }
 
-    private synchronized void removeTailElement(){
+    private  void removeTailElement(){
         //remove element from tail and reorder tail and head
         JavaBaseTask removed = items.remove(tail.getKey());
         System.out.println("element with index : " + removed.getKey() + "has been deleted doe to cache eviction");
@@ -149,7 +164,7 @@ public class ManageCache {
         headAu.next = null;
     }
 
-    private synchronized void removeRepetitiveItem(JavaBaseTask item) {
+    private  void removeRepetitiveItem(JavaBaseTask item) {
         var hAux = head;
         var tAux = tail;
         if (hAux.getKey() == item.getKey()){
@@ -172,18 +187,4 @@ public class ManageCache {
             tAux.previous=tAux.next;
         }
     }
-    /*
-    private synchronized void changeFrequency(JavaBaseTask aux) {
-        JavaBaseTask actual = head;
-        while (actual.next != null){
-            if (actual.getKey() == aux.getKey()){
-                actual = aux;
-                actual.next = actual.next;
-                actual.previous = actual.previous;
-            }else {
-                actual = actual.next;
-            }
-        }
-    }
-     */
 }
