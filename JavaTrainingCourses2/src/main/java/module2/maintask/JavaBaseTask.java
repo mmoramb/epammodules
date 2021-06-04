@@ -11,17 +11,17 @@ public class JavaBaseTask {
     JavaBaseTask next;
     JavaBaseTask previous;
     private int frequency;
-    private LocalDateTime acceedTime;
+    private LocalDateTime accecedTime;
 
     public JavaBaseTask(Integer key, String value){
-        acceedTime = LocalDateTime.now();
+        accecedTime = LocalDateTime.now();
         this.value = value;
         this.key = key;
         frequency = 1;
     }
 
     public void setFrequency() {
-        acceedTime = LocalDateTime.now();
+        accecedTime = LocalDateTime.now();
         this.frequency += 1;
     }
 
@@ -37,7 +37,7 @@ public class JavaBaseTask {
     }
 
     public LocalDateTime getAcceedTime() {
-        return acceedTime;
+        return accecedTime;
     }
 
 }

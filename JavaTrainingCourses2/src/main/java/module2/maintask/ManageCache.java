@@ -66,10 +66,11 @@ public class ManageCache {
                 }
                 readWrite.unlock();
             }
-        }, 0,10, TimeUnit.SECONDS);
+        }, 11,11, TimeUnit.SECONDS);
     }
-    /*
+
         public static void main(String[] args) throws InterruptedException {
+
             int capacity = 4;
             ManageCache manageCache = new ManageCache(capacity);
             for (int i=0; i<capacity; i++){
@@ -78,15 +79,8 @@ public class ManageCache {
             Thread.sleep(8000);
             manageCache.get(1).getValue();
             System.out.println("value retraved :"+manageCache.get(2).getValue());
-
-            //System.out.println("after getting");
-            var headAux = manageCache.head;
-            while (headAux != null){
-                System.out.println(headAux.getKey());
-                headAux = headAux.next;
-            }
         }
-    */
+
     public JavaBaseTask get(int key){
         return chageFrequency(key);
     }
